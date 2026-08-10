@@ -11,4 +11,15 @@ Base.metadata.create_all(bind=engine)
 
 # Every time we connect to something (server, db etc..) we create a new session
 # db.commit() - commits the transaction to the database when autocommit is False
-session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Dependency that opens and closes a session per request
+def get_db():
+    db = SessionLocal()
+    try:
+        # if this was return, then the session would be closed after the function ends
+        # yield servers the db and then wait
+        # under the hood FASTAPI is resuming this function after it's done with the api call. That closes the session by running finally
+        yield db 
+    finally:
+        db.close()

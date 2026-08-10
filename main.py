@@ -1,6 +1,7 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from models.Product import ProductSchema, Product
-from config import session
+from config import get_db
+from sqlalchemy.orm import Session
 
 app = FastAPI()
 
@@ -10,13 +11,12 @@ def greet():
 
 
 @app.get("/products")
-def get_products():
-    db = session()
+# Depends(get_db) -  It's a dependency injection. FastAPI calls get_db automatically and passes the session to the function
+def get_products(db: Session = Depends(get_db)):
     return db.query(Product).all()
 
 @app.get("/product/{id}")
-def get_products_by_id(id: int):
-    db = session()
+def get_products_by_id(id: int, db: Session = Depends(get_db)):
     product = db.query(Product).filter(Product.id == id).first()
     if product is None:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -36,8 +36,7 @@ def get_products_by_id(id: int):
     """
 
 @app.post("/product")
-def create_product(product: ProductSchema):
-    db = session()
+def create_product(product: ProductSchema, db: Session = Depends(get_db)):
     # exclude_none=True means: "don't include fields that are None". Used for the id
     # model_dump() - converts the Pydantic model to a dictionary
     db_product = Product(**product.model_dump(exclude_none=True))
@@ -46,8 +45,7 @@ def create_product(product: ProductSchema):
     return db_product
 
 @app.put("/product/{id}")
-def update_product(id: int, product: ProductSchema):
-    db = session()
+def update_product(id: int, product: ProductSchema, db: Session = Depends(get_db)):
     db.query(Product).filter(Product.id == id).update(product.model_dump())
     db.commit()
     return product
@@ -65,8 +63,7 @@ def update_product(id: int, product: ProductSchema):
     """
 
 @app.delete("/product/{id}")
-def delete_product(id: int):
-    db = session()
+def delete_product(id: int, db: Session = Depends(get_db)):
     productToDelete = db.query(Product).filter(Product.id == id).first()
     if productToDelete is None:
         raise HTTPException(status_code=404, detail="Product not found")
