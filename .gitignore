@@ -1,0 +1,12 @@
+# Database
+*.db
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+fastapi-env/
+
+# Environment variables
+.env
