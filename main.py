@@ -2,8 +2,16 @@ from fastapi import FastAPI, HTTPException, Depends
 from models.Product import ProductSchema, Product
 from config import get_db
 from sqlalchemy.orm import Session
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # usual frontend url (react)
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def greet():
@@ -15,7 +23,7 @@ def greet():
 def get_products(db: Session = Depends(get_db)):
     return db.query(Product).all()
 
-@app.get("/product/{id}")
+@app.get("/products/{id}")
 def get_products_by_id(id: int, db: Session = Depends(get_db)):
     product = db.query(Product).filter(Product.id == id).first()
     if product is None:
@@ -35,7 +43,7 @@ def get_products_by_id(id: int, db: Session = Depends(get_db)):
     return product
     """
 
-@app.post("/product")
+@app.post("/products")
 def create_product(product: ProductSchema, db: Session = Depends(get_db)):
     # exclude_none=True means: "don't include fields that are None". Used for the id
     # model_dump() - converts the Pydantic model to a dictionary
@@ -44,7 +52,7 @@ def create_product(product: ProductSchema, db: Session = Depends(get_db)):
     db.commit()
     return db_product
 
-@app.put("/product/{id}")
+@app.put("/products/{id}")
 def update_product(id: int, product: ProductSchema, db: Session = Depends(get_db)):
     db.query(Product).filter(Product.id == id).update(product.model_dump())
     db.commit()
@@ -62,7 +70,7 @@ def update_product(id: int, product: ProductSchema, db: Session = Depends(get_db
     raise HTTPException(status_code=404, detail="Product not found")
     """
 
-@app.delete("/product/{id}")
+@app.delete("/products/{id}")
 def delete_product(id: int, db: Session = Depends(get_db)):
     productToDelete = db.query(Product).filter(Product.id == id).first()
     if productToDelete is None:
